@@ -173,18 +173,22 @@ class _WorkoutsScreenState extends State<WorkoutsScreen> {
 
   // Firestore collections
   final workoutsCollection = FirebaseFirestore.instance.collection('workouts');
-  final customPlansCollection = FirebaseFirestore.instance.collection('custom_plans');
+  final customPlansCollection =
+  FirebaseFirestore.instance.collection('custom_plans');
 
-  void _deleteWorkout(String id) async {
-    await workoutsCollection.doc(id).delete();
+  void _deleteCustomPlan(String id) async {
+    await customPlansCollection.doc(id).delete();
   }
 
   void _toggleProgress(String id, bool completed) async {
     await workoutsCollection.doc(id).update({'completed': completed});
   }
 
-  void _deleteCustomPlan(String id) async {
-    await customPlansCollection.doc(id).delete();
+  void _navigateToCreateWorkout() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const AddWorkoutScreen()),
+    );
   }
 
   void _navigateToCreateCustomPlan() {
@@ -201,35 +205,15 @@ class _WorkoutsScreenState extends State<WorkoutsScreen> {
     );
   }
 
-  // Add Biceps Curl Exercise
-  void _addBicepsCurlExercise() async {
-    final newWorkout = {
-      'name': 'Biceps Curl',
-      'duration': 15,
-      'level': 'Beginner',
-      'description':
-      'Stand with a dumbbell in each hand. Curl the weights upward focusing on biceps contraction.',
-      'imageUrl': '',
-      'category': 'Strength',
-      'musclesTargeted': ['Arms', 'Biceps'],
-      'equipment': ['Dumbbells'],
-      'completed': false,
-    };
-
-    await workoutsCollection.add(newWorkout);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Biceps Curl exercise added!')),
-    );
-  }
-
-  Widget _buildDropdown(
-      String label, List<String> items, String selected, ValueChanged<String?> onChanged) {
+  Widget _buildDropdown(String label, List<String> items, String selected,
+      ValueChanged<String?> onChanged) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 5),
       child: DropdownButton<String>(
         value: selected,
         onChanged: onChanged,
-        items: items.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+        items:
+        items.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
       ),
     );
   }
@@ -276,15 +260,17 @@ class _WorkoutsScreenState extends State<WorkoutsScreen> {
                   setState(() => selectedCategory = value!);
                 }),
                 if (selectedCategory != "Custom Plans") ...[
-                  _buildDropdown("Difficulty", difficulties, selectedDifficulty, (value) {
-                    setState(() => selectedDifficulty = value!);
-                  }),
+                  _buildDropdown("Difficulty", difficulties, selectedDifficulty,
+                          (value) {
+                        setState(() => selectedDifficulty = value!);
+                      }),
                   _buildDropdown("Muscle", muscles, selectedMuscle, (value) {
                     setState(() => selectedMuscle = value!);
                   }),
-                  _buildDropdown("Equipment", equipmentList, selectedEquipment, (value) {
-                    setState(() => selectedEquipment = value!);
-                  }),
+                  _buildDropdown("Equipment", equipmentList, selectedEquipment,
+                          (value) {
+                        setState(() => selectedEquipment = value!);
+                      }),
                 ],
               ],
             ),
@@ -297,14 +283,16 @@ class _WorkoutsScreenState extends State<WorkoutsScreen> {
               stream: customPlansCollection.snapshots(),
               builder: (context, snapshot) {
                 if (!snapshot.hasData) {
-                  return const Center(child: CircularProgressIndicator());
+                  return const Center(
+                      child: CircularProgressIndicator());
                 }
                 final plans = snapshot.data!.docs
-                    .map((doc) =>
-                    CustomPlan.fromMap(doc.data() as Map<String, dynamic>, doc.id))
+                    .map((doc) => CustomPlan.fromMap(
+                    doc.data() as Map<String, dynamic>, doc.id))
                     .toList();
                 if (plans.isEmpty) {
-                  return const Center(child: Text("No custom plans created."));
+                  return const Center(
+                      child: Text("No custom plans created."));
                 }
                 return ListView.builder(
                   itemCount: plans.length,
@@ -316,10 +304,12 @@ class _WorkoutsScreenState extends State<WorkoutsScreen> {
                         title: Text(plan.name),
                         subtitle: Text(plan.description),
                         trailing: IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.red),
+                          icon: const Icon(Icons.delete,
+                              color: Colors.red),
                           onPressed: () => _deleteCustomPlan(plan.id),
                         ),
-                        onTap: () => _navigateToCustomPlanDetails(plan),
+                        onTap: () =>
+                            _navigateToCustomPlanDetails(plan),
                       ),
                     );
                   },
@@ -330,34 +320,36 @@ class _WorkoutsScreenState extends State<WorkoutsScreen> {
               stream: workoutsCollection.snapshots(),
               builder: (context, snapshot) {
                 if (!snapshot.hasData) {
-                  return const Center(child: CircularProgressIndicator());
+                  return const Center(
+                      child: CircularProgressIndicator());
                 }
                 final workouts = snapshot.data!.docs
-                    .map(
-                      (doc) =>
-                      Workout.fromMap(doc.data() as Map<String, dynamic>, doc.id),
-                )
+                    .map((doc) => Workout.fromMap(
+                    doc.data() as Map<String, dynamic>, doc.id))
                     .where((workout) {
-                  bool matchesSearch = workout.name.toLowerCase().contains(searchQuery);
-                  bool matchesCategory =
-                      selectedCategory == "All" || workout.category == selectedCategory;
-                  bool matchesDifficulty =
-                      selectedDifficulty == "All" || workout.level == selectedDifficulty;
-                  bool matchesMuscle =
-                      selectedMuscle == "All" || workout.musclesTargeted.contains(selectedMuscle);
-                  bool matchesEquipment =
-                      selectedEquipment == "All" || workout.equipment.contains(selectedEquipment);
+                  bool matchesSearch = workout.name
+                      .toLowerCase()
+                      .contains(searchQuery);
+                  bool matchesCategory = selectedCategory == "All" ||
+                      workout.category == selectedCategory;
+                  bool matchesDifficulty = selectedDifficulty == "All" ||
+                      workout.level == selectedDifficulty;
+                  bool matchesMuscle = selectedMuscle == "All" ||
+                      workout.musclesTargeted
+                          .contains(selectedMuscle);
+                  bool matchesEquipment = selectedEquipment == "All" ||
+                      workout.equipment.contains(selectedEquipment);
 
                   return matchesSearch &&
                       matchesCategory &&
                       matchesDifficulty &&
                       matchesMuscle &&
                       matchesEquipment;
-                })
-                    .toList();
+                }).toList();
 
                 if (workouts.isEmpty) {
-                  return const Center(child: Text("No workouts found."));
+                  return const Center(
+                      child: Text("No workouts found."));
                 }
 
                 return ListView.builder(
@@ -368,9 +360,14 @@ class _WorkoutsScreenState extends State<WorkoutsScreen> {
                       margin: const EdgeInsets.all(10),
                       child: ListTile(
                         leading: workout.imageUrl.isNotEmpty
-                            ? Image.network(workout.imageUrl,
-                            width: 50, height: 50, fit: BoxFit.cover)
-                            : const Icon(Icons.fitness_center, size: 50),
+                            ? Image.network(
+                          workout.imageUrl,
+                          width: 70,
+                          height: 70,
+                          fit: BoxFit.cover,
+                        )
+                            : const Icon(Icons.fitness_center,
+                            size: 50),
                         title: Text(workout.name),
                         subtitle: Text(
                             "${workout.category} • ${workout.level} • ${workout.duration} min\nMuscles: ${workout.musclesTargeted.join(', ')}\nEquipment: ${workout.equipment.join(', ')}"),
@@ -378,7 +375,8 @@ class _WorkoutsScreenState extends State<WorkoutsScreen> {
                         trailing: Checkbox(
                           value: workout.completed,
                           onChanged: (value) {
-                            _toggleProgress(workout.id, value ?? false);
+                            _toggleProgress(
+                                workout.id, value ?? false);
                           },
                         ),
                         onTap: () {
@@ -388,20 +386,36 @@ class _WorkoutsScreenState extends State<WorkoutsScreen> {
                               title: Text(workout.name),
                               content: SingleChildScrollView(
                                 child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  crossAxisAlignment:
+                                  CrossAxisAlignment.start,
                                   children: [
-                                    Text("Description: ${workout.description}"),
-                                    const SizedBox(height: 8),
+                                    if (workout.imageUrl.isNotEmpty)
+                                      ClipRRect(
+                                        borderRadius:
+                                        BorderRadius.circular(8),
+                                        child: Image.network(
+                                          workout.imageUrl,
+                                          height: 200,
+                                          fit: BoxFit.cover,
+                                        ),
+                                      ),
+                                    const SizedBox(height: 10),
+                                    Text(
+                                        "Description: ${workout.description}"),
                                     Text("Difficulty: ${workout.level}"),
-                                    Text("Duration: ${workout.duration} min"),
-                                    Text("Muscles Targeted: ${workout.musclesTargeted.join(', ')}"),
-                                    Text("Equipment: ${workout.equipment.join(', ')}"),
+                                    Text(
+                                        "Duration: ${workout.duration} min"),
+                                    Text(
+                                        "Muscles Targeted: ${workout.musclesTargeted.join(', ')}"),
+                                    Text(
+                                        "Equipment: ${workout.equipment.join(', ')}"),
                                   ],
                                 ),
                               ),
                               actions: [
                                 TextButton(
-                                    onPressed: () => Navigator.pop(context),
+                                    onPressed: () =>
+                                        Navigator.pop(context),
                                     child: const Text("Close"))
                               ],
                             ),
@@ -418,25 +432,167 @@ class _WorkoutsScreenState extends State<WorkoutsScreen> {
       ),
       floatingActionButton: selectedCategory == "Custom Plans"
           ? null
-          : Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          FloatingActionButton(
-            heroTag: 'addWorkout',
-            onPressed: () {
-              // TODO: Navigate to add new workout screen
-            },
-            child: const Icon(Icons.add),
-          ),
-          const SizedBox(height: 10),
-          FloatingActionButton(
-            heroTag: 'addBiceps',
-            onPressed: _addBicepsCurlExercise,
-            tooltip: "Add Biceps Curl Exercise",
-            backgroundColor: Colors.green,
-            child: const Icon(Icons.fitness_center),
-          ),
+          : FloatingActionButton(
+        onPressed: _navigateToCreateWorkout,
+        child: const Icon(Icons.add),
+      ),
+    );
+  }
+}
+
+// --- ADD WORKOUT SCREEN ---
+
+class AddWorkoutScreen extends StatefulWidget {
+  const AddWorkoutScreen({super.key});
+
+  @override
+  State<AddWorkoutScreen> createState() => _AddWorkoutScreenState();
+}
+
+class _AddWorkoutScreenState extends State<AddWorkoutScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final workoutsCollection = FirebaseFirestore.instance.collection('workouts');
+
+  String name = "";
+  int duration = 0;
+  String level = "Beginner";
+  String description = "";
+  String imageUrl = "";
+  String category = "Strength";
+  List<String> musclesTargeted = [];
+  List<String> equipment = [];
+
+  final levels = ["Beginner", "Intermediate", "Advanced"];
+  final categories = ["Strength", "Cardio", "Yoga", "Stretching", "HIIT"];
+  final muscleOptions = ["Chest", "Back", "Legs", "Arms", "Shoulders", "Core"];
+  final equipmentOptions = [
+    "None",
+    "Dumbbells",
+    "Barbell",
+    "Kettlebell",
+    "Machine",
+    "Resistance Bands",
+    "Bodyweight"
+  ];
+
+  void _saveWorkout() async {
+    if (_formKey.currentState!.validate()) {
+      _formKey.currentState!.save();
+
+      final newWorkout = {
+        'name': name,
+        'duration': duration,
+        'level': level,
+        'description': description,
+        'imageUrl': imageUrl,
+        'category': category,
+        'musclesTargeted': musclesTargeted,
+        'equipment': equipment,
+        'completed': false,
+      };
+
+      await workoutsCollection.add(newWorkout);
+      Navigator.pop(context);
+    }
+  }
+
+  Widget _buildMultiSelect(List<String> options, List<String> selected,
+      Function(List<String>) onChanged) {
+    return Wrap(
+      spacing: 5,
+      children: options.map((opt) {
+        final isSelected = selected.contains(opt);
+        return FilterChip(
+          label: Text(opt),
+          selected: isSelected,
+          onSelected: (val) {
+            setState(() {
+              if (val) {
+                selected.add(opt);
+              } else {
+                selected.remove(opt);
+              }
+              onChanged(selected);
+            });
+          },
+        );
+      }).toList(),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("Add Workout"),
+        actions: [
+          TextButton(
+              onPressed: _saveWorkout,
+              child: const Text("Save",
+                  style: TextStyle(color: Colors.white, fontSize: 18)))
         ],
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Form(
+          key: _formKey,
+          child: ListView(
+            children: [
+              TextFormField(
+                decoration: const InputDecoration(labelText: "Workout Name"),
+                validator: (v) =>
+                v == null || v.isEmpty ? "Enter a name" : null,
+                onSaved: (v) => name = v ?? "",
+              ),
+              TextFormField(
+                decoration: const InputDecoration(labelText: "Duration (minutes)"),
+                keyboardType: TextInputType.number,
+                validator: (v) =>
+                v == null || v.isEmpty ? "Enter duration" : null,
+                onSaved: (v) => duration = int.tryParse(v ?? "0") ?? 0,
+              ),
+              DropdownButtonFormField(
+                decoration: const InputDecoration(labelText: "Level"),
+                value: level,
+                items: levels
+                    .map((e) =>
+                    DropdownMenuItem(value: e, child: Text(e)))
+                    .toList(),
+                onChanged: (val) => setState(() => level = val!),
+              ),
+              DropdownButtonFormField(
+                decoration: const InputDecoration(labelText: "Category"),
+                value: category,
+                items: categories
+                    .map((e) =>
+                    DropdownMenuItem(value: e, child: Text(e)))
+                    .toList(),
+                onChanged: (val) => setState(() => category = val!),
+              ),
+              TextFormField(
+                decoration:
+                const InputDecoration(labelText: "Description"),
+                maxLines: 2,
+                onSaved: (v) => description = v ?? "",
+              ),
+              TextFormField(
+                decoration:
+                const InputDecoration(labelText: "Image/GIF URL"),
+                onSaved: (v) => imageUrl = v ?? "",
+              ),
+              const SizedBox(height: 10),
+              const Text("Muscles Targeted",
+                  style: TextStyle(fontWeight: FontWeight.bold)),
+              _buildMultiSelect(muscleOptions, musclesTargeted,
+                      (val) => musclesTargeted = val),
+              const SizedBox(height: 10),
+              const Text("Equipment",
+                  style: TextStyle(fontWeight: FontWeight.bold)),
+              _buildMultiSelect(equipmentOptions, equipment,
+                      (val) => equipment = val),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -483,7 +639,8 @@ class _CustomPlanScreenState extends State<CustomPlanScreen> {
         actions: [
           TextButton(
               onPressed: _savePlan,
-              child: const Text("Save", style: TextStyle(color: Colors.white, fontSize: 18))),
+              child: const Text("Save",
+                  style: TextStyle(color: Colors.white, fontSize: 18))),
         ],
       ),
       body: Padding(
@@ -495,18 +652,22 @@ class _CustomPlanScreenState extends State<CustomPlanScreen> {
               child: Column(children: [
                 TextFormField(
                   decoration: const InputDecoration(labelText: "Plan Name"),
-                  validator: (value) => value == null || value.isEmpty ? "Enter a name" : null,
+                  validator: (value) =>
+                  value == null || value.isEmpty ? "Enter a name" : null,
                   onSaved: (value) => name = value ?? "",
                 ),
                 TextFormField(
-                  decoration: const InputDecoration(labelText: "Description (optional)"),
+                  decoration:
+                  const InputDecoration(labelText: "Description (optional)"),
                   maxLines: 2,
                   onSaved: (value) => description = value ?? "",
                 ),
               ]),
             ),
             const SizedBox(height: 20),
-            const Text("Select Workouts", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            const Text("Select Workouts",
+                style:
+                TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
             Expanded(
               child: StreamBuilder<QuerySnapshot>(
                 stream: workoutsCollection.snapshots(),
@@ -515,15 +676,18 @@ class _CustomPlanScreenState extends State<CustomPlanScreen> {
                     return const Center(child: CircularProgressIndicator());
                   }
                   final workouts = snapshot.data!.docs
-                      .map((doc) => Workout.fromMap(doc.data() as Map<String, dynamic>, doc.id))
+                      .map((doc) =>
+                      Workout.fromMap(doc.data() as Map<String, dynamic>, doc.id))
                       .toList();
 
                   return ListView(
                     children: workouts.map((workout) {
-                      final selected = selectedWorkoutIds.contains(workout.id);
+                      final selected =
+                      selectedWorkoutIds.contains(workout.id);
                       return CheckboxListTile(
                         title: Text(workout.name),
-                        subtitle: Text("${workout.category} • ${workout.level} • ${workout.duration} min"),
+                        subtitle: Text(
+                            "${workout.category} • ${workout.level} • ${workout.duration} min"),
                         value: selected,
                         onChanged: (val) {
                           setState(() {
@@ -555,7 +719,8 @@ class CustomPlanDetailsScreen extends StatefulWidget {
   const CustomPlanDetailsScreen({super.key, required this.plan});
 
   @override
-  State<CustomPlanDetailsScreen> createState() => _CustomPlanDetailsScreenState();
+  State<CustomPlanDetailsScreen> createState() =>
+      _CustomPlanDetailsScreenState();
 }
 
 class _CustomPlanDetailsScreenState extends State<CustomPlanDetailsScreen> {
@@ -565,7 +730,6 @@ class _CustomPlanDetailsScreenState extends State<CustomPlanDetailsScreen> {
     setState(() {
       workoutCompletion[workoutId] = completed;
     });
-    // Optionally: Save progress to Firestore user data
   }
 
   @override
@@ -583,13 +747,16 @@ class _CustomPlanDetailsScreenState extends State<CustomPlanDetailsScreen> {
     return Scaffold(
       appBar: AppBar(title: Text(widget.plan.name)),
       body: StreamBuilder<QuerySnapshot>(
-        stream: workoutsCollection.where(FieldPath.documentId, whereIn: widget.plan.workoutIds).snapshots(),
+        stream: workoutsCollection.where(FieldPath.documentId,
+            whereIn: widget.plan.workoutIds)
+            .snapshots(),
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
             return const Center(child: CircularProgressIndicator());
           }
           final workouts = snapshot.data!.docs
-              .map((doc) => Workout.fromMap(doc.data() as Map<String, dynamic>, doc.id))
+              .map((doc) =>
+              Workout.fromMap(doc.data() as Map<String, dynamic>, doc.id))
               .toList();
 
           return ListView.builder(
@@ -602,33 +769,39 @@ class _CustomPlanDetailsScreenState extends State<CustomPlanDetailsScreen> {
                 margin: const EdgeInsets.all(8),
                 child: ListTile(
                   leading: workout.imageUrl.isNotEmpty
-                      ? Image.network(workout.imageUrl, width: 50, height: 50, fit: BoxFit.cover)
+                      ? Image.network(workout.imageUrl,
+                      width: 50, height: 50, fit: BoxFit.cover)
                       : const Icon(Icons.fitness_center, size: 50),
                   title: Text(workout.name),
-                  subtitle: Text("${workout.level} • ${workout.duration} min"),
+                  subtitle:
+                  Text("${workout.level} • ${workout.duration} min"),
                   trailing: Checkbox(
                     value: completed,
-                    onChanged: (val) => _toggleCompletion(workout.id, val ?? false),
+                    onChanged: (val) =>
+                        _toggleCompletion(workout.id, val ?? false),
                   ),
                   onTap: () => showDialog(
                     context: context,
                     builder: (_) => AlertDialog(
                       title: Text(workout.name),
-                      content: SingleChildScrollView(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text("Description: ${workout.description}"),
-                            const SizedBox(height: 8),
-                            Text("Difficulty: ${workout.level}"),
-                            Text("Duration: ${workout.duration} min"),
-                            Text("Muscles Targeted: ${workout.musclesTargeted.join(', ')}"),
-                            Text("Equipment: ${workout.equipment.join(', ')}"),
-                          ],
-                        ),
+                      content: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (workout.imageUrl.isNotEmpty)
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.network(workout.imageUrl,
+                                  height: 200, fit: BoxFit.cover),
+                            ),
+                          const SizedBox(height: 10),
+                          Text("Description: ${workout.description}"),
+                        ],
                       ),
                       actions: [
-                        TextButton(onPressed: () => Navigator.pop(context), child: const Text("Close"))
+                        TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text("Close")),
                       ],
                     ),
                   ),
