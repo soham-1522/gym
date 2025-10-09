@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../utils/colors.dart';
@@ -14,7 +15,7 @@ class Workout {
   final List<String> musclesTargeted;
   final String category;
   final List<String> equipment;
-  final String? videoUrl;
+  final String? gifAsset; // 👈 added field for gif path (assets/gifs/*.gif)
   final bool completed;
 
   Workout({
@@ -26,7 +27,7 @@ class Workout {
     required this.musclesTargeted,
     required this.category,
     required this.equipment,
-    this.videoUrl,
+    this.gifAsset,
     this.completed = false,
   });
 
@@ -41,7 +42,7 @@ class Workout {
       musclesTargeted: List<String>.from(data['musclesTargeted'] ?? []),
       category: data['category'] ?? '',
       equipment: List<String>.from(data['equipment'] ?? []),
-      videoUrl: data['videoUrl'],
+      gifAsset: data['gifAsset'], // store gif path like assets/gifs/pose.gif
       completed: data['completed'] ?? false,
     );
   }
@@ -119,8 +120,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 final workouts = snapshot.data!.docs
                     .map((doc) => Workout.fromFirestore(doc))
                     .where((w) =>
-                (selectedCategory == "All" || w.category == selectedCategory) &&
-                    (selectedDifficulty == "All" || w.difficulty == selectedDifficulty))
+                (selectedCategory == "All" ||
+                    w.category == selectedCategory) &&
+                    (selectedDifficulty == "All" ||
+                        w.difficulty == selectedDifficulty))
                     .toList();
 
                 if (workouts.isEmpty) {
@@ -240,9 +243,8 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildChipRow(
-      List<String> items, String selected, Function(String) onTap,
-      {bool showAdd = false}) {
+  Widget _buildChipRow(List<String> items, String selected,
+      Function(String) onTap, {bool showAdd = false}) {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -284,10 +286,11 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-/// FIXED: AddWorkoutScreen as a proper Widget
+/// ==================
+/// ADD WORKOUT (stub)
+/// ==================
 class AddWorkoutScreen extends StatelessWidget {
   const AddWorkoutScreen({super.key});
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -296,35 +299,78 @@ class AddWorkoutScreen extends StatelessWidget {
         backgroundColor: AppColors.primary,
       ),
       body: const Center(
-        child: Text(
-          "This is where you will add a new workout.",
-          style: TextStyle(fontSize: 18),
-        ),
+        child: Text("This is where you will add a new workout.",
+            style: TextStyle(fontSize: 18)),
       ),
     );
   }
 }
 
 /// ==================
-/// WORKOUT DETAIL
+/// WORKOUT DETAIL + Stopwatch + GIF
 /// ==================
-class WorkoutDetailScreen extends StatelessWidget {
+class WorkoutDetailScreen extends StatefulWidget {
   final Workout workout;
   const WorkoutDetailScreen({super.key, required this.workout});
+
+  @override
+  State<WorkoutDetailScreen> createState() => _WorkoutDetailScreenState();
+}
+
+class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
+  Stopwatch stopwatch = Stopwatch();
+  Timer? timer;
+  String elapsedTime = "00:00";
+
+  @override
+  void dispose() {
+    timer?.cancel();
+    super.dispose();
+  }
+
+  void startStopwatch() {
+    if (!stopwatch.isRunning) {
+      stopwatch.start();
+      timer = Timer.periodic(const Duration(seconds: 1), (_) {
+        final seconds = stopwatch.elapsed.inSeconds;
+        final minutes = seconds ~/ 60;
+        final remainingSeconds = seconds % 60;
+        setState(() {
+          elapsedTime =
+          "${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}";
+        });
+      });
+    }
+  }
+
+  void stopStopwatch() {
+    stopwatch.stop();
+    timer?.cancel();
+  }
+
+  void resetStopwatch() {
+    stopwatch.reset();
+    setState(() {
+      elapsedTime = "00:00";
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Hero(
-        tag: workout.id,
+        tag: widget.workout.id,
         child: CustomScrollView(
           slivers: [
             SliverAppBar(
-              expandedHeight: 220,
+              expandedHeight: 260,
               pinned: true,
               flexibleSpace: FlexibleSpaceBar(
-                title: Text(workout.name),
-                background: Container(
+                title: Text(widget.workout.name),
+                background: widget.workout.gifAsset != null
+                    ? Image.asset(widget.workout.gifAsset!,
+                    fit: BoxFit.cover)
+                    : Container(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
@@ -347,20 +393,69 @@ class WorkoutDetailScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(workout.description,
+                    Text(widget.workout.description,
                         style: const TextStyle(
                             fontSize: 16, color: Colors.black87)),
                     const SizedBox(height: 20),
-                    _infoCard(Icons.timer, "${workout.duration} min"),
-                    _infoCard(Icons.star, workout.difficulty,
+
+                    // ✅ Stopwatch Section
+                    Card(
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16)),
+                      elevation: 4,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          children: [
+                            const Icon(Icons.timer,
+                                size: 40, color: Colors.blue),
+                            const SizedBox(height: 10),
+                            Text(elapsedTime,
+                                style: const TextStyle(
+                                    fontSize: 32,
+                                    fontWeight: FontWeight.bold)),
+                            const SizedBox(height: 10),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                ElevatedButton(
+                                  onPressed: startStopwatch,
+                                  style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.green),
+                                  child: const Text("Start"),
+                                ),
+                                const SizedBox(width: 8),
+                                ElevatedButton(
+                                  onPressed: stopStopwatch,
+                                  style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.red),
+                                  child: const Text("Stop"),
+                                ),
+                                const SizedBox(width: 8),
+                                ElevatedButton(
+                                  onPressed: resetStopwatch,
+                                  style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.grey),
+                                  child: const Text("Reset"),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 20),
+                    _infoCard(Icons.timer, "${widget.workout.duration} min"),
+                    _infoCard(Icons.star, widget.workout.difficulty,
                         iconColor: Colors.amber),
-                    _infoCard(Icons.category, workout.category),
-                    if (workout.musclesTargeted.isNotEmpty)
+                    _infoCard(Icons.category, widget.workout.category),
+                    if (widget.workout.musclesTargeted.isNotEmpty)
                       _infoCard(Icons.accessibility_new,
-                          "Muscles: ${workout.musclesTargeted.join(', ')}"),
-                    if (workout.equipment.isNotEmpty)
+                          "Muscles: ${widget.workout.musclesTargeted.join(', ')}"),
+                    if (widget.workout.equipment.isNotEmpty)
                       _infoCard(Icons.fitness_center,
-                          "Equipment: ${workout.equipment.join(', ')}"),
+                          "Equipment: ${widget.workout.equipment.join(', ')}"),
                   ],
                 ),
               ),
